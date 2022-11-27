@@ -103,6 +103,7 @@ void tree()
 
 /*
  *  Draw vertex in polar coordinates with normal
+ *  Used for ball function
  */
 void Vertex(double th,double ph)
 {
@@ -152,32 +153,39 @@ void ball(double x,double y,double z,double r)
    glPopMatrix();
 }
 
-// CRATER DEV HERE
-// crater variables
-int numCraters = 0;
 
-struct Crater {
-   // holds crater parameters
-   // shape generation
-   // ellipse (polar): r(theta) = a* b_n / sqrt(1-(1-b_n^2)cos(theta)^2)
-   int a;     // scalar / length of semimajor axis "diameter" (0,50]?
-   int b_n;   // normalized semiminor axis (b/a) "eccentricity" (0,1]
-   int cross; // cross-sectional shape - later expand to chebyshev
-   int text;  // texture index
-   // location / orientation
-   int x;   // origin x
-   int y;   // origin y 
-   int az;  // azimuthal orientation of semimajor axis
-} crater;
+void displayScene_Tree_test(){
+   glColor3f(0,.5,.2);
+   tree();
 
-void crater(){
-   // Draw crater here
+   glPushMatrix();
+   glTranslatef(1 ,0,0);
+   glScalef(1,1.25,.75);
+   glColor3f(0,.5,.2);
+   tree();
+   glPopMatrix();
+
+   glPushMatrix();
+   glTranslatef(1 ,0,0);
+   glScalef(1.75,1,1);
+   glColor3f(0,.5,.2);
+   tree();
+   glPopMatrix();
+
+   glPushMatrix();
+   glTranslatef(1 ,0,1);
+   glScalef(1,1,1);
+   glColor3f(0,.5,.2);
+   tree();
+   glPopMatrix();
+
+   glPushMatrix();
+   glTranslatef(1 ,0,-1);
+   glScalef(1,1,1);
+   glColor3f(0,.5,.2);
+   tree();
+   glPopMatrix();
 }
-
-void placeCrater(){
-   //place crater here
-}
-
 
 int mode=0;       //  Projection mode
 int move=1;       //  Move light
@@ -214,41 +222,33 @@ vtx is[n];
 #define Cos(th) cos(3.14159265/180*(th))
 #define Sin(th) sin(3.14159265/180*(th))
 
-void displayScene(){
+// crater variables
+int numCraters = 0;
 
+struct Crater {
+   // holds crater parameters
+   // shape generation
+   // ellipse (polar): r(theta) = a* b_n / sqrt(1-(1-b_n^2)cos(theta)^2)
+   int a;     // scalar / length of semimajor axis "diameter" (0,50]?
+   int b_n;   // normalized semiminor axis (b/a) "eccentricity" (0,1]
+   int cross; // cross-sectional shape - later expand to chebyshev
+   int text;  // texture index
+   // location / orientation
+   int x;   // origin x
+   int y;   // origin y 
+   int az;  // azimuthal orientation of semimajor axis
+} crater;
+
+void draw_crater(){
+   // Draw crater here
 }
 
-void displayScene_Tree_test(){
-   glColor3f(0,.5,.2);
-   tree();
+void placeCrater(){
+   //place crater here
+}
 
-   glPushMatrix();
-   glTranslatef(1 ,0,0);
-   glScalef(1,1.25,.75);
-   glColor3f(0,.5,.2);
-   tree();
-   glPopMatrix();
-
-   glPushMatrix();
-   glTranslatef(1 ,0,0);
-   glScalef(1.75,1,1);
-   glColor3f(0,.5,.2);
-   tree();
-   glPopMatrix();
-
-   glPushMatrix();
-   glTranslatef(1 ,0,1);
-   glScalef(1,1,1);
-   glColor3f(0,.5,.2);
-   tree();
-   glPopMatrix();
-
-   glPushMatrix();
-   glTranslatef(1 ,0,-1);
-   glScalef(1,1,1);
-   glColor3f(0,.5,.2);
-   tree();
-   glPopMatrix();
+void displayScene(){
+   // display scene here
 }
 
 void displayParams(){
