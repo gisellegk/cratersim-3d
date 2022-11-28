@@ -2,6 +2,8 @@
 #include <stdlib.h>
 #include <stdarg.h>
 #include <math.h>
+#include <string.h>
+#include <time.h> // for seeding rand()
 #ifdef USEGLEW
 #include <GL/glew.h>
 #endif
@@ -14,6 +16,10 @@
 #else
 #include <GL/glut.h>
 #endif
+
+//#include "Clarkson-Delaunay.h"
+int *BuildTriangleIndexList (void *pointList, float factor, int numberOfInputPoints, int numDimensions, int clockwise, int *numTriangleVertices );
+
 //  Default resolution
 //  For Retina displays compile with -DRES=2
 #ifndef RES
@@ -202,6 +208,7 @@ double Ey_fp=.5;
 double Ez_fp=1;
 
 // Light values
+int light     =   1; 
 int one       =   1;  // Unit value
 int distance  =   500;  // Light distance
 int inc       =  10;  // Ball increment
@@ -213,10 +220,6 @@ int shininess =   0;  // Shininess (power of two)
 float shiny   =   1;  // Shininess (value)
 int zh        =  90;  // Light azimuth
 int ylight    =  45;  // Elevation of light
-typedef struct {float x,y,z;} vtx;
-typedef struct {int A,B,C;} tri;
-#define n 500
-vtx is[n];
 
 //  Macro for sin & cos in degrees
 #define Cos(th) cos(3.14159265/180*(th))
@@ -224,6 +227,21 @@ vtx is[n];
 
 // crater variables
 int numCraters = 0;
+int numPts = 0;
+#define CANVAS_LEN 5
+#define MAX_DIM 5000
+
+//typedef struct {int x,y,z;} pt;
+
+// gridded version for ref
+// #define N 1024 
+// float pts[N][N]; // lol big fat array wow i hate that this is being allocated here and not inside a block of code but okay
+
+#define N 2097152 // 2^21 pts ~ 25mb / ~455 craters 
+//pt pts[N];
+
+static int pts[N*2];
+static int pts_z[N];
 
 struct Crater {
    // holds crater parameters
@@ -241,15 +259,144 @@ struct Crater {
 
 void draw_crater(){
    // Draw crater here
+   numCraters++;
 }
 
-void placeCrater(){
-   //place crater here
+
+
+void reset_canvas(){
+   memset(pts,0,sizeof(pts));
+   memset(pts_z,0,sizeof(pts_z));
+
+   // add corners
+   // random pts for now
+
+   // int i;
+   // int numTPs = 5;
+   // int dims = 3;
+   // int* ptrToPts = pts;
+   // for(i=(numTPs*dims); i>0; i--){
+   //    *ptrToPts++ = rand() % MAX_DIM;
+   // }
+   
+   pts[0] = MAX_DIM;
+   pts[1] = MAX_DIM;
+   pts_z[0] = 0;//rand()%MAX_DIM/100;
+
+   pts[2] = -MAX_DIM;
+   pts[3] = MAX_DIM;
+   pts_z[1] = 0;//rand()%MAX_DIM/100;
+
+   pts[4] = -MAX_DIM;
+   pts[5] = -MAX_DIM;
+   pts_z[2] = 0;//rand()%MAX_DIM/100;
+
+   pts[6] = MAX_DIM;
+   pts[7] = -MAX_DIM;
+   pts_z[3] = 0;//rand()%MAX_DIM/100;
+
+   //zero out crater counter
+   numCraters = 0;
+   numPts = 4;//5; // always starts w/ 4 corners of canvas
 }
 
+static int num_vtx;
 void displayScene(){
+   int i;
+   float x,y,z; 
+   
    // display scene here
+   glColor3f(.5, .5, .5);
+   
+   // find triangles
+
+   int* vtx = BuildTriangleIndexList(
+      (void*)pts,
+      0, // integer points
+      numPts,
+      2, // 2 dims
+      -1, // ccw
+      &num_vtx
+   );
+
+
+   printf("num_pts: %d num_vtx: %d\n", numPts, num_vtx);
+   for(i=0; i<numPts; i++){
+      printf("  pt %d: (%d,%d,%d)\n",i,pts[2*i],pts[2*i+1],pts_z[i]);
+
+   }
+
+   glBegin(GL_TRIANGLES);
+   // TODO: normal vector
+   //glBegin(GL_POINTS);
+   int vertex;
+   for(i=0; i<num_vtx; i++){
+      // draw vertex
+      vertex = vtx[i];
+      x = (float)pts[2*vertex]/MAX_DIM*CANVAS_LEN;
+      y = (float)pts[2*vertex+1]/MAX_DIM*CANVAS_LEN;
+      z = (float)pts_z[vertex]/MAX_DIM*CANVAS_LEN;
+      printf("vtx %d = pt %d: (%f, %f, %f)\n", i, vertex, x,y,z);
+      if(vertex==0){
+         glColor3f(1,0,0);//red
+      }else if(vertex==1){
+         glColor3f(1,1,0);//yellow
+      } else if(vertex == 2){
+         glColor3f(0,1,0);//green
+      } else if (vertex==3){
+         glColor3f(0,1,1);//cyan
+      } else {
+         glColor3f(0,0,1); //blue
+      }
+      
+      glVertex3f(x,z,y);
+   }
+   
+   free(vtx); // no mem leaks >:(
+   glEnd();
+
 }
+
+// Gridded version for reference
+/*
+void reset_canvas_gridded(){
+   // fill pts with zeros
+   memset(pts, 0, sizeof(pts)); 
+   // zero out crater counter
+   numCraters = 0;
+}
+
+void displayScene_gridded(){
+   // display canvas
+   //displayScene_Tree_test();
+   glColor3f(.5, .5, .5);
+   glBegin(GL_TRIANGLE_STRIP);
+
+   int i,j;
+   float x1,x2,y1,y2, z11,z12,z21,z22;
+
+   for (i = 0; i < N-1; i++){
+      x1 = ((float)i)/N * CANVAS_LIM*2-CANVAS_LIM;
+      x2 = ((float)i+1)/N * CANVAS_LIM*2-CANVAS_LIM;
+      for (j=0; j < N-1; j++){
+         y1 = ((float)j)/N * CANVAS_LIM*2-CANVAS_LIM;
+         y2 = ((float)j+1)/N * CANVAS_LIM*2-CANVAS_LIM;
+         z11 = pts[i][j];
+         z12 = pts[i][j+1];
+         z21 = pts[i+1][j];
+         z22 = pts[i+1][j+1];
+
+         // TODO: calc normals??
+
+         glVertex3d(x1,z11,y1);
+         glVertex3d(x1,z12,y2);
+         glVertex3d(x2,z21,y1);
+         glVertex3d(x2,z22,y2);
+      }
+   }
+   glEnd();
+}
+*/
 
 void displayParams(){
    glWindowPos2i(5,5);
@@ -265,33 +412,35 @@ void displayParams(){
 void configureLighting(){
    // LIGHT AND SHADING
    glShadeModel(GL_SMOOTH);
-
-   //  Enable Lighting
-   //  Translate intensity to color vectors
-   float Ambient[]   = {0.01*ambient ,0.01*ambient ,0.01*ambient ,1.0};
-   float Diffuse[]   = {0.01*diffuse ,0.01*diffuse ,0.01*diffuse ,1.0};
-   float Specular[]  = {0.01*specular,0.01*specular,0.01*specular,1.0};
-   //  Light position
-   float Position[]  = {distance*Cos(zh)*Sin(ylight),distance*Cos(ylight),distance*Sin(zh)*Cos(ylight),1.0};
-   //  Draw light position as ball (still no lighting here)
-   glColor3f(1,1,1);
-   ball(Position[0],Position[1],Position[2] , 0.1);
-   //  OpenGL should normalize normal vectors
-   glEnable(GL_NORMALIZE);
-   //  Enable lighting
-   glEnable(GL_LIGHTING);
-   //  Location of viewer for specular calculations
-   glLightModeli(GL_LIGHT_MODEL_LOCAL_VIEWER,0);
-   //  glColor sets ambient and diffuse color materials
-   glColorMaterial(GL_FRONT_AND_BACK,GL_AMBIENT_AND_DIFFUSE);
-   glEnable(GL_COLOR_MATERIAL);
-   //  Enable light 0
-   glEnable(GL_LIGHT0);
-   //  Set ambient, diffuse, specular components and position of light 0
-   glLightfv(GL_LIGHT0,GL_AMBIENT ,Ambient);
-   glLightfv(GL_LIGHT0,GL_DIFFUSE ,Diffuse);
-   glLightfv(GL_LIGHT0,GL_SPECULAR,Specular);
-   glLightfv(GL_LIGHT0,GL_POSITION,Position);
+   if (light) {
+      //  Enable Lighting
+      //  Translate intensity to color vectors
+      float Ambient[]   = {0.01*ambient ,0.01*ambient ,0.01*ambient ,1.0};
+      float Diffuse[]   = {0.01*diffuse ,0.01*diffuse ,0.01*diffuse ,1.0};
+      float Specular[]  = {0.01*specular,0.01*specular,0.01*specular,1.0};
+      //  Light position
+      float Position[]  = {distance*Cos(zh)*Sin(ylight),distance*Cos(ylight),distance*Sin(zh)*Cos(ylight),1.0};
+      //  Draw light position as ball (still no lighting here)
+      glColor3f(1,1,1);
+      ball(Position[0],Position[1],Position[2] , 0.1);
+      //  OpenGL should normalize normal vectors
+      glEnable(GL_NORMALIZE);
+      //  Enable lighting
+      glEnable(GL_LIGHTING);
+      //  Location of viewer for specular calculations
+      glLightModeli(GL_LIGHT_MODEL_LOCAL_VIEWER,0);
+      //  glColor sets ambient and diffuse color materials
+      glColorMaterial(GL_FRONT_AND_BACK,GL_AMBIENT_AND_DIFFUSE);
+      glEnable(GL_COLOR_MATERIAL);
+      //  Enable light 0
+      glEnable(GL_LIGHT0);
+      //  Set ambient, diffuse, specular components and position of light 0
+      glLightfv(GL_LIGHT0,GL_AMBIENT ,Ambient);
+      glLightfv(GL_LIGHT0,GL_DIFFUSE ,Diffuse);
+      glLightfv(GL_LIGHT0,GL_SPECULAR,Specular);
+      glLightfv(GL_LIGHT0,GL_POSITION,Position);
+   }
+   else glDisable(GL_LIGHTING);
 }
 
 /*
@@ -326,8 +475,7 @@ void display()
 
       gluLookAt(Ex_fp,Ey_fp,Ez_fp, Cx,Cy,Cz, 0,1,0);
    }
-
-   configureLighting();
+   
    displayScene(); //  Draw scene
    glDisable(GL_LIGHTING);
    displayParams(); //  Display parameters
@@ -460,6 +608,9 @@ void key(unsigned char ch,int x,int y)
       zh += 1;
    else if (ch == 'd')
       zh -= 1;
+   //  Toggle lighting
+   else if (ch == 'l' || ch == 'L')
+      light = 1-light;
    //  Light elevation
    else if (ch=='s')
       ylight -= 1;
@@ -478,11 +629,11 @@ void key(unsigned char ch,int x,int y)
    //  Add or Clear Craters
    else if (ch == 'c'){
       // TODO: call add crater here
-      numCraters++;
+      draw_crater();
    }
    else if (ch == 'x'){
       // TODO: call reset here
-      numCraters = 0;
+      reset_canvas();
    }
    //  Keep angles to +/-360 degrees
    // viewport angles
@@ -522,6 +673,8 @@ int main(int argc,char* argv[])
    glutSpecialFunc(special);
    glutKeyboardFunc(key);
    //  Pass control to GLUT so it can interact with the user
+   reset_canvas();
+   srand(zh*time(NULL));
    ErrCheck("init");
    glutMainLoop();
    return 0;

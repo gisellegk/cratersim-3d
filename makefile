@@ -1,7 +1,14 @@
 EXE=cratersim
+SOURCES=Clarkson-Delaunay.c cratersim.c
+OBJECTS=$(SOURCES:.c=.o)
 
 # Main target
 all: $(EXE)
+
+
+# CFLG
+# LIBS
+# CLEAN
 
 #  Msys/MinGW
 ifeq "$(OS)" "Windows_NT"
@@ -24,15 +31,26 @@ CLEAN=rm -f $(EXE) *.o *.a
 endif
 
 
+
+
+# $@ = all
+# $< = first prerequisite. 
+# $^ = all prerequisites. 
+
+
+
 # Compile rules
-.c.o:
-	gcc -c $(CFLG)  $<
+.c.o: # build .o files from .c files
+	gcc -c $(CFLG)  $^
+
 .cpp.o:
-	g++ -c $(CFLG)  $<
+	g++ -c $(CFLG)  $^
 
 #  Link
-cratersim:cratersim.o 
-	gcc $(CFLG) -o $@ $^  $(LIBS)
+$(EXE): $(OBJECTS)
+	gcc $(CFLG) -o $@ $^ $(LIBS)
+
+
 
 #  Clean
 clean:

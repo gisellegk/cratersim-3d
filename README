@@ -3,7 +3,8 @@ Giselle Koo
 
 Based on examples from CSCI4229/5229 Fall 2022
 Willem A. (Vlakkies) Schreuder
-
+And triangulation algorithm from
+https://www.codeproject.com/Articles/587629/A-Delaunay-triangulation-function-in-C
 
 Key bindings:
 -------------
