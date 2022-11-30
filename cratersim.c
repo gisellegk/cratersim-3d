@@ -228,6 +228,7 @@ int ylight    =  45;  // Elevation of light
 // crater variables
 int numCraters = 0;
 int numPts = 0;
+int num_vtx;
 #define CANVAS_LEN 5
 #define MAX_DIM 5000
 
@@ -240,8 +241,8 @@ int numPts = 0;
 #define N 2097152 // 2^21 pts ~ 25mb / ~455 craters 
 //pt pts[N];
 
-static int pts[N*2];
-static int pts_z[N];
+int pts[N*2];
+int pts_z[N];
 
 struct Crater {
    // holds crater parameters
@@ -269,40 +270,31 @@ void reset_canvas(){
    memset(pts_z,0,sizeof(pts_z));
 
    // add corners
-   // random pts for now
-
-   // int i;
-   // int numTPs = 5;
-   // int dims = 3;
-   // int* ptrToPts = pts;
-   // for(i=(numTPs*dims); i>0; i--){
-   //    *ptrToPts++ = rand() % MAX_DIM;
-   // }
-   
+      
    pts[0] = MAX_DIM;
    pts[1] = MAX_DIM;
-   pts_z[0] = 0;//rand()%MAX_DIM/100;
+   pts_z[0] = 0;
 
    pts[2] = -MAX_DIM;
    pts[3] = MAX_DIM;
-   pts_z[1] = 0;//rand()%MAX_DIM/100;
+   pts_z[1] = 0;
 
    pts[4] = -MAX_DIM;
    pts[5] = -MAX_DIM;
-   pts_z[2] = 0;//rand()%MAX_DIM/100;
+   pts_z[2] = 0;
 
    pts[6] = MAX_DIM;
    pts[7] = -MAX_DIM;
-   pts_z[3] = 0;//rand()%MAX_DIM/100;
+   pts_z[3] = 0;
 
    //zero out crater counter
    numCraters = 0;
-   numPts = 4;//5; // always starts w/ 4 corners of canvas
+   numPts = 4; // always starts w/ 4 corners of canvas
 }
 
-static int num_vtx;
+
 void displayScene(){
-   int i;
+   int i,v;
    float x,y,z; 
    
    // display scene here
@@ -328,22 +320,20 @@ void displayScene(){
 
    glBegin(GL_TRIANGLES);
    // TODO: normal vector
-   //glBegin(GL_POINTS);
-   int vertex;
    for(i=0; i<num_vtx; i++){
       // draw vertex
-      vertex = vtx[i];
-      x = (float)pts[2*vertex]/MAX_DIM*CANVAS_LEN;
-      y = (float)pts[2*vertex+1]/MAX_DIM*CANVAS_LEN;
-      z = (float)pts_z[vertex]/MAX_DIM*CANVAS_LEN;
-      printf("vtx %d = pt %d: (%f, %f, %f)\n", i, vertex, x,y,z);
-      if(vertex==0){
+      v = vtx[i];
+      x = (float)pts[2*v]/MAX_DIM*CANVAS_LEN;
+      y = (float)pts[2*v+1]/MAX_DIM*CANVAS_LEN;
+      z = (float)pts_z[v]/MAX_DIM*CANVAS_LEN;
+      printf("vtx %d = pt %d: (%f, %f, %f)\n", i, v, x,y,z);
+      if(v==0){
          glColor3f(1,0,0);//red
-      }else if(vertex==1){
+      }else if(v==1){
          glColor3f(1,1,0);//yellow
-      } else if(vertex == 2){
+      } else if(v == 2){
          glColor3f(0,1,0);//green
-      } else if (vertex==3){
+      } else if (v==3){
          glColor3f(0,1,1);//cyan
       } else {
          glColor3f(0,0,1); //blue
@@ -356,47 +346,6 @@ void displayScene(){
    glEnd();
 
 }
-
-// Gridded version for reference
-/*
-void reset_canvas_gridded(){
-   // fill pts with zeros
-   memset(pts, 0, sizeof(pts)); 
-   // zero out crater counter
-   numCraters = 0;
-}
-
-void displayScene_gridded(){
-   // display canvas
-   //displayScene_Tree_test();
-   glColor3f(.5, .5, .5);
-   glBegin(GL_TRIANGLE_STRIP);
-
-   int i,j;
-   float x1,x2,y1,y2, z11,z12,z21,z22;
-
-   for (i = 0; i < N-1; i++){
-      x1 = ((float)i)/N * CANVAS_LIM*2-CANVAS_LIM;
-      x2 = ((float)i+1)/N * CANVAS_LIM*2-CANVAS_LIM;
-      for (j=0; j < N-1; j++){
-         y1 = ((float)j)/N * CANVAS_LIM*2-CANVAS_LIM;
-         y2 = ((float)j+1)/N * CANVAS_LIM*2-CANVAS_LIM;
-         z11 = pts[i][j];
-         z12 = pts[i][j+1];
-         z21 = pts[i+1][j];
-         z22 = pts[i+1][j+1];
-
-         // TODO: calc normals??
-
-         glVertex3d(x1,z11,y1);
-         glVertex3d(x1,z12,y2);
-         glVertex3d(x2,z21,y1);
-         glVertex3d(x2,z22,y2);
-      }
-   }
-   glEnd();
-}
-*/
 
 void displayParams(){
    glWindowPos2i(5,5);
