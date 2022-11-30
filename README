@@ -18,6 +18,7 @@ View Controls:
   0          Reset view angle
 
 Lighting Control:
+  l          Toggle lighting
   m          Toggle automatic light movement
   a/d        Move light (azimuth)
   w/s        Move light (elevation)

@@ -976,7 +976,7 @@ if (numPointsProcessed >= totalInputPoints)  {
    maxOutputEntries = numPointsProcessed * 3*3; // 3 values per triangle, and there will be about 2 times as many triangles as input points
    ptrToOutputList = (WORD*)malloc((maxOutputEntries + 1) * sizeof(WORD));
    currenOutputIndex = 0;
-   printf("totalInputPoints=%d numPointsProcessed=%d\n", totalInputPoints, numPointsProcessed);
+   //printf("totalInputPoints=%d numPointsProcessed=%d\n", totalInputPoints, numPointsProcessed);
    return 0;
 }
 if (ptrToIntsToIndex)  {         // if there is a list of integer points
@@ -1093,7 +1093,7 @@ static void triangleList_out (int v0, int v1, int v2, int v3) {
       ptrToOutputList[currenOutputIndex++] = (WORD)v0;
       ptrToOutputList[currenOutputIndex++] = (WORD)v1;
       ptrToOutputList[currenOutputIndex++] = (WORD)v2;
-      printf(">>%d vtx=(%d,%d,%d)\n",currenOutputIndex,(int)v0, (int)v1, (int)v2);
+      //printf(">>%d vtx=(%d,%d,%d)\n",currenOutputIndex,(int)v0, (int)v1, (int)v2);
       //printf("triangle found, current index =%d\n", currenOutputIndex);
 
       // In all the testing I did so far, currenOutputIndex has never exceeeded maxOutputEntries

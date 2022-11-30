@@ -210,11 +210,11 @@ double Ez_fp=1;
 // Light values
 int light     =   1; 
 int one       =   1;  // Unit value
-int distance  =   500;  // Light distance
+int distance  =   50;  // Light distance
 int inc       =  10;  // Ball increment
 int emission  =   0;  // Emission intensity (%)
-int ambient   =  10;  // Ambient intensity (%)
-int diffuse   =  50;  // Diffuse intensity (%)
+int ambient   =  70;  // Ambient intensity (%)
+int diffuse   =  70;  // Diffuse intensity (%)
 int specular  =   0;  // Specular intensity (%)
 int shininess =   0;  // Shininess (power of two)
 float shiny   =   1;  // Shininess (value)
@@ -229,40 +229,96 @@ int ylight    =  45;  // Elevation of light
 int numCraters = 0;
 int numPts = 0;
 int num_vtx;
+
 #define CANVAS_LEN 5
-#define MAX_DIM 5000
-
-//typedef struct {int x,y,z;} pt;
-
-// gridded version for ref
-// #define N 1024 
-// float pts[N][N]; // lol big fat array wow i hate that this is being allocated here and not inside a block of code but okay
-
+#define MAX_DIM 5000 // km or something
 #define N 2097152 // 2^21 pts ~ 25mb / ~455 craters 
-//pt pts[N];
-
 int pts[N*2];
 int pts_z[N];
 
-struct Crater {
+typedef struct {double r; double z;} rz; // pt for cross-section profile
+
+rz cross[14] = { // just one for now
+   {0.0, -.80},
+   {.04, -.93},
+   {.08, -1.0},
+   {.12, -1.0},
+   {.40, -.93},
+   {.56, -.80},
+   {.60, -.67},
+   {.60, -.53},
+   {.72, -.13},
+   {.80,  .20},
+   {.84,  .27},
+   {.88,  .27},
+   {.96,  .07},
+   {1.0,  0.0}
+}; 
+
+typedef struct {
    // holds crater parameters
    // shape generation
    // ellipse (polar): r(theta) = a* b_n / sqrt(1-(1-b_n^2)cos(theta)^2)
-   int a;     // scalar / length of semimajor axis "diameter" (0,50]?
+   int a;     // scalar / length of semimajor axis "diameter" (0,50] in km
    int b_n;   // normalized semiminor axis (b/a) "eccentricity" (0,1]
-   int cross; // cross-sectional shape - later expand to chebyshev
-   int text;  // texture index
+   int depth; // depth scalar in km
+   rz* cross; // cross-sectional shape - later expand to chebyshev
+   int cross_len;
+   //int text;  // texture index
    // location / orientation
    int x;   // origin x
    int y;   // origin y 
-   int az;  // azimuthal orientation of semimajor axis
+//   int az;  // azimuthal orientation of semimajor axis
 } crater;
 
-void draw_crater(){
+#define ANGULAR_RESOLUTION 5 //int
+void draw_crater(crater *c){
    // Draw crater here
+   int p,theta,x,y,z;
+   double r,x_d,y_d,z_d;
+   printf("\nAdding Crater....\n");
+   for(theta=0; theta<360; theta+=5){
+      //printf("  theta=%d\n", theta);
+      for(p=0; p<c->cross_len; p++){
+         // cylindrical coordinates r, theta, z
+         // scale the template radius pt w/ the given radius
+         // in our case a = 100 km, b_r = 1 (no eccentricity)
+         r = c->cross[p].r * c->a*c->b_n/sqrt(Sin(theta)*Sin(theta) + c->b_n*c->b_n*Cos(theta)*Cos(theta));
+
+         // cyl to cartesian
+         x_d = r*Cos(theta);
+         y_d = r*Sin(theta);
+         z_d = c->cross[p].z * c->depth;
+         x = (int)floor(x_d);
+         y = (int)floor(y_d);
+         z = (int)floor(z_d);
+
+         //printf("  p%d = (%.3f, %.3f, %.3f) = (%d,%d,%d)\n",p,x_d,y_d,z_d,x,y,z);
+
+
+         // add pt to list
+         pts[2*numPts] = x;
+         pts[2*numPts + 1] = y;
+         pts_z[numPts] = z;
+         numPts++;
+      }
+   }
    numCraters++;
 }
 
+void draw_default_crater(){
+   crater c;
+   c.a = 1000; // diameter = 1000 km (canvas is 10,000 km wide)
+   c.b_n = 1; // circular
+   c.depth = 500; // i guess lol idk
+   c.cross = cross;
+   c.cross_len = 14;
+   c.x = 0; // centered
+   c.y=0;
+//   c.az=0; 
+   draw_crater(&c);
+
+}
 
 
 void reset_canvas(){
@@ -295,13 +351,16 @@ void reset_canvas(){
 
 void displayScene(){
    int i,v;
-   float x,y,z; 
+   float x1,y1,z1,
+         x2,y2,z2,
+         x3,y3,z3; 
    
    // display scene here
+
+   // opengl stuff
    glColor3f(.5, .5, .5);
    
    // find triangles
-
    int* vtx = BuildTriangleIndexList(
       (void*)pts,
       0, // integer points
@@ -312,38 +371,67 @@ void displayScene(){
    );
 
 
-   printf("num_pts: %d num_vtx: %d\n", numPts, num_vtx);
-   for(i=0; i<numPts; i++){
-      printf("  pt %d: (%d,%d,%d)\n",i,pts[2*i],pts[2*i+1],pts_z[i]);
+   //printf("num_pts: %d num_vtx: %d\n", numPts, num_vtx);
+   // for(i=0; i<numPts; i++){
+   //    printf("  pt %d: (%d,%d,%d)\n",i,pts[2*i],pts[2*i+1],pts_z[i]);
 
-   }
-
-   glBegin(GL_TRIANGLES);
-   // TODO: normal vector
-   for(i=0; i<num_vtx; i++){
-      // draw vertex
-      v = vtx[i];
-      x = (float)pts[2*v]/MAX_DIM*CANVAS_LEN;
-      y = (float)pts[2*v+1]/MAX_DIM*CANVAS_LEN;
-      z = (float)pts_z[v]/MAX_DIM*CANVAS_LEN;
-      printf("vtx %d = pt %d: (%f, %f, %f)\n", i, v, x,y,z);
-      if(v==0){
-         glColor3f(1,0,0);//red
-      }else if(v==1){
-         glColor3f(1,1,0);//yellow
-      } else if(v == 2){
-         glColor3f(0,1,0);//green
-      } else if (v==3){
-         glColor3f(0,1,1);//cyan
-      } else {
-         glColor3f(0,0,1); //blue
-      }
-      
-      glVertex3f(x,z,y);
-   }
+   // }
    
-   free(vtx); // no mem leaks >:(
+   glBegin(GL_TRIANGLES);
+   for(i=0; i<num_vtx; i+=3){
+      // draw triangle
+      v = vtx[i];
+      x1 = ((float)pts[2*v])/MAX_DIM*CANVAS_LEN;
+      y1 = ((float)pts[2*v+1])/MAX_DIM*CANVAS_LEN;
+      z1 = ((float)pts_z[v])/MAX_DIM*CANVAS_LEN;
+
+      v = vtx[i+1];
+      x2 = ((float)pts[2*v])/MAX_DIM*CANVAS_LEN;
+      y2 = ((float)pts[2*v+1])/MAX_DIM*CANVAS_LEN;
+      z2 = ((float)pts_z[v])/MAX_DIM*CANVAS_LEN;
+
+      v = vtx[i+2];
+      x3 = ((float)pts[2*v])/MAX_DIM*CANVAS_LEN;
+      y3 = ((float)pts[2*v+1])/MAX_DIM*CANVAS_LEN;
+      z3 = ((float)pts_z[v])/MAX_DIM*CANVAS_LEN;
+
+      // normal vector math
+      //  Planar vector 0
+      float dx0 = x1-x2;
+      float dy0 = y1-y2;
+      float dz0 = z1-z2;
+      //  Planar vector 1
+      float dx1 = x3-x1;
+      float dy1 = y3-y1;
+      float dz1 = z3-z1;
+      //  Normal
+      float Nx = dy0*dz1 - dy1*dz0;
+      float Ny = dz0*dx1 - dz1*dx0;
+      float Nz = dx0*dy1 - dx1*dy0;
+      
+      // printf("vtx %d = pt %d: (%f, %f, %f)\n", i, v, x,y,z);
+      // if(v==0){
+      //    glColor3f(1,0,0);//red
+      // }else if(v==1){
+      //    glColor3f(1,1,0);//yellow
+      // } else if(v == 2){
+      //    glColor3f(0,1,0);//green
+      // } else if (v==3){
+      //    glColor3f(0,1,1);//cyan
+      // } else {
+      //     //blue
+      // }
+      glColor3f(.5,.5,.5);
+      glNormal3f(Nx,Nz,Ny);
+      
+      glVertex3f(x1,z1,y1);
+      glVertex3f(x2,z2,y2);
+      glVertex3f(x3,z3,y3);
+      
+   }
    glEnd();
+
+   free(vtx); // no mem leaks >:(
 
 }
 
@@ -425,9 +513,13 @@ void display()
       gluLookAt(Ex_fp,Ey_fp,Ez_fp, Cx,Cy,Cz, 0,1,0);
    }
    
+   configureLighting();
+
    displayScene(); //  Draw scene
+
    glDisable(GL_LIGHTING);
    displayParams(); //  Display parameters
+   
    glFlush();
    glutSwapBuffers();
 }
@@ -514,10 +606,10 @@ void special(int key,int x,int y)
          th -= 5;
       //  Up arrow key - increase elevation by 5 degrees
       else if (key == GLUT_KEY_UP)
-         ph += 5;
+         ph += 1;
       //  Down arrow key - decrease elevation by 5 degrees
       else if (key == GLUT_KEY_DOWN)
-         ph -= 5;
+         ph -= 1;
    }
    // for any mode
    //  PageUp key - increase dim
@@ -578,7 +670,7 @@ void key(unsigned char ch,int x,int y)
    //  Add or Clear Craters
    else if (ch == 'c'){
       // TODO: call add crater here
-      draw_crater();
+      draw_default_crater();
    }
    else if (ch == 'x'){
       // TODO: call reset here
