@@ -1,9 +1,11 @@
-#include <float.h>     // Otherwise you may need these header files
+#include <float.h> 
 #include <math.h>
 #include <stdlib.h>
 #include <string.h>
 #include <stdio.h>
 #define WORD  int
+
+
 
 #include "Clarkson-Delaunay.h"
 
@@ -292,7 +294,7 @@ static double sc(basis_s *v,simplex *s, int k, int j) {
    double temp;
 
    if (j<10) {
-      labound = _logb(v->sqa)/2;
+      labound = logb(v->sqa)/2;
       sc_max_scale = EXACT_BITS - labound - 0.66*(k-2)-1  -DELIFT;
       if (sc_max_scale<1) {
          // warning(-10, overshot exact arithmetic);
@@ -310,19 +312,19 @@ static double sc(basis_s *v,simplex *s, int k, int j) {
          for (i=k-1,sni=s->neigh+k-1;i>0;i--,sni--) {
             snib = sni->basis;
             sc_Sb += snib->sqb;
-            sc_ldetbound += _logb(snib->sqb)/2 + 1;
+            sc_ldetbound += logb(snib->sqb)/2 + 1;
             sc_ldetbound -= snib->lscale;
          }
       }
    }
-   // if (sc_ldetbound - v->lscale + _logb(v->sqb)/2 + 1 < 0)
-   // when v->sqb is 0, _logb gives "divide by zero" error with Borland 2007 compilier, so check for it
+   // if (sc_ldetbound - v->lscale + logb(v->sqb)/2 + 1 < 0)
+   // when v->sqb is 0, logb gives "divide by zero" error with Borland 2007 compilier, so check for it
    temp = v->sqb;
-   if (temp)  temp = _logb(temp) * 0.5;
+   if (temp)  temp = logb(temp) * 0.5;
    if (sc_ldetbound - v->lscale + temp + 1 < 0) {
       return 0;
    } else {
-      sc_lscale = (int)floor(_logb(2*sc_Sb/(v->sqb + v->sqa*B_ERR_MIN)))/2;
+      sc_lscale = (int)floor(logb(2*sc_Sb/(v->sqb + v->sqa*B_ERR_MIN)))/2;
       if (sc_lscale > sc_max_scale) {
          sc_lscale = (int)floor(sc_max_scale);
       } else if (sc_lscale<0) sc_lscale = 0;
