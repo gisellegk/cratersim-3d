@@ -1,6 +1,15 @@
 Final Project - Cratersim
 Giselle Koo
 
+This is a crater simulator which allows you to generate a pseudorandomized lunar landscape.
+
+I am most proud of the crater generation algorithm. Basically, it only saves exactly the number of vertices necessary to render the scene, rather than something like a grid of vertices. The canvas starts with only the 4 corners of a square area. Then it procedurally generates a crater based on a random xy coordinate for the center of the crater, semimajor axis length, normalized semiminor axis length (which expresses eccentricity), semimajor axis orientation (which way it points) and cross-section profile. It calculates a set of (x,y,z) vertices and adds it to a list of points. Then every cycle the code computes a set of triangles based on the Clarkson-Delaunay triangulation algorithm provided by Ken Clarkson and extracted by Eric Hufschmid. It was a challenge to implement this algorithm since it was not clear to me what the input and output arrays were supposed to represent/how they were supposed to be formatted. This methodology basically gets rid of gridding problems and the quality of the craters is only limited by the angular resolution the craters are generated with as well as the resolution the cross-sectional profile is provided at. 
+
+When a crater is generated, it is possible for the crater to "destroy" part or all of an existing crater. There is an algorithm to identify and remove "destroyed" vertices, by calculating the distance between the new crater's origin and every point on the xy plane, and then calculating what the radius of the crater would be. If the distance is less than the radius of the crater, then the point is destroyed and removed from the array. 
+
+A "dirt" texture is draped over the triangulated mesh in order to give the scene a more realistic look. 
+
+
 Based on examples from CSCI4229/5229 Fall 2022
 Willem A. (Vlakkies) Schreuder
 And triangulation algorithm from
@@ -16,9 +25,10 @@ View Controls:
   arrows     [perspective] Change view angle, [first-person] control view position: up/down = forward/backwards, left/right = turn 
   PgDn/PgUp  Zoom in and out
   0          Reset view angle
+  p          Toggle visible points
 
 Lighting Control:
-  l          Toggle lighting
+  l          Toggle lightingx
   m          Toggle automatic light movement
   a/d        Move light (azimuth)
   w/s        Move light (elevation)
@@ -26,3 +36,4 @@ Lighting Control:
 Crater Control:
   c          Add Crater
   x          Clear all craters
+  1          Draw centered crater
